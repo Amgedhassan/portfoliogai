@@ -6,7 +6,6 @@ const { existsSync } = require('fs');
 const compression = require('compression');
 const cors = require('cors');
 const esbuild = require('esbuild');
-const { exec } = require('child_process');
 
 require('dotenv').config();
 
@@ -15,7 +14,7 @@ const PORT = process.env.PORT || 8080;
 const DATA_PATH = path.join(__dirname, 'portfolio_data.json');
 
 console.log('\n\n###########################################');
-console.log('   AMGAD PORTFOLIO ENGINE v2.0.3 [SYNC] ');
+console.log('   AMGAD PORTFOLIO ENGINE v2.1.0 [FIX] ');
 console.log('###########################################');
 console.log(`📍 Root: ${__dirname}`);
 console.log(`🔑 Key: ${process.env.API_KEY ? 'Active' : 'Missing'}`);
@@ -25,39 +24,49 @@ app.use(compression());
 app.use(express.json({ limit: '50mb' }));
 app.use(cors());
 
-app.get('/api/health', (req, res) => res.json({ status: 'online', v: '2.0.3' }));
+// Health check
+app.get('/api/health', (req, res) => res.json({ status: 'online', v: '2.1.0' }));
 
+// Injection for browser process.env shim
 app.get('/env-config.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  res.send(`window.process = { env: { API_KEY: "${process.env.API_KEY || ''}" } };`);
+  res.send(`window.process = { env: { API_KEY: "${process.env.API_KEY || ''}", NODE_ENV: "production" } };`);
 });
 
-app.use(async (req, res, next) => {
-  const url = req.url.split('?')[0];
-  if (url.endsWith('.tsx') || url.endsWith('.ts')) {
-    const filePath = path.join(__dirname, url);
-    try {
-      const content = await fs.readFile(filePath, 'utf8');
-      const result = await esbuild.transform(content, {
-        loader: url.endsWith('.tsx') ? 'tsx' : 'ts',
-        format: 'esm',
-        target: 'esnext',
-        sourcemap: 'inline',
-        jsx: 'automatic',
-        define: { 
-          'process.env.NODE_ENV': '"production"',
-          'process.env.API_KEY': `"${process.env.API_KEY || ''}"`
-        }
-      });
-      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-      return res.send(result.code);
-    } catch (err) {
-      console.error(`[❌ COMPILER ERROR] ${url}:`, err.message);
-      res.setHeader('Content-Type', 'application/javascript');
-      return res.status(500).send(`console.error("COMPILATION_ERROR: ${err.message}");`);
+/**
+ * EXPLICIT ROUTE HANDLER FOR TS/TSX FILES
+ * This ensures the browser receives valid JS with the correct MIME type.
+ */
+app.get(['/*.tsx', '/*.ts', '/components/*.tsx', '/components/*.ts'], async (req, res, next) => {
+  const url = req.path; // Use req.path to ignore query strings
+  const relativePath = url.startsWith('/') ? url.slice(1) : url;
+  const filePath = path.join(__dirname, relativePath);
+
+  try {
+    if (!existsSync(filePath)) {
+      return next(); // Fall through to 404/static
     }
+
+    const content = await fs.readFile(filePath, 'utf8');
+    const result = await esbuild.transform(content, {
+      loader: url.endsWith('.tsx') ? 'tsx' : 'ts',
+      format: 'esm',
+      target: 'esnext',
+      sourcemap: 'inline',
+      jsx: 'automatic',
+      define: { 
+        'process.env.NODE_ENV': '"production"',
+        'process.env.API_KEY': `"${process.env.API_KEY || ''}"`
+      }
+    });
+
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    return res.send(result.code);
+  } catch (err) {
+    console.error(`[❌ COMPILER ERROR] ${url}:`, err.message);
+    res.setHeader('Content-Type', 'application/javascript');
+    return res.status(500).send(`console.error("COMPILATION_ERROR: ${err.message}");`);
   }
-  next();
 });
 
 app.get('/api/portfolio', async (req, res) => {
@@ -81,6 +90,7 @@ app.post('/api/portfolio', async (req, res) => {
   }
 });
 
+// Static files and SPA fallback
 app.use(express.static(__dirname));
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
