@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const compression = require('compression');
 const cors = require('cors');
+const esbuild = require('esbuild');
 
 // Load environment variables from .env file
 require('dotenv').config();
@@ -33,12 +34,26 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Security Headers
-app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  next();
+// --- THE FIX: ON-THE-FLY TRANSPILLER ---
+// This middleware intercepts requests for .ts and .tsx files,
+// transpiles them to JS using esbuild, and serves them with the correct MIME type.
+app.get(['/*.ts', '/*.tsx'], async (req, res, next) => {
+  const filePath = path.join(__dirname, req.path);
+  try {
+    const content = await fs.readFile(filePath, 'utf8');
+    const result = await esbuild.transform(content, {
+      loader: req.path.endsWith('.tsx') ? 'tsx' : 'ts',
+      format: 'esm',
+      target: 'esnext',
+      sourcemap: 'inline',
+    });
+    
+    res.setHeader('Content-Type', 'application/javascript');
+    res.send(result.code);
+  } catch (err) {
+    console.error(`Transpilation error for ${req.path}:`, err);
+    next(); // Fallback to static server if it fails
+  }
 });
 
 const DATA_PATH = path.join(__dirname, 'portfolio_data.json');
@@ -77,7 +92,7 @@ app.post('/api/portfolio', async (req, res) => {
   }
 });
 
-// Serve static files
+// Serve static files (HTML, CSS, Images, etc.)
 app.use(express.static(__dirname));
 
 app.get('*', (req, res) => {
@@ -86,5 +101,5 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Production Server active at http://127.0.0.1:${PORT}`);
-  console.log('Check your domain logs if you see 502/504 errors.');
+  console.log('Transpilation Engine: Active (esbuild)');
 });
