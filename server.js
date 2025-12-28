@@ -14,63 +14,76 @@ const PORT = process.env.PORT || 8080;
 const DATA_PATH = path.join(__dirname, 'portfolio_data.json');
 
 console.log('\n\n###########################################');
-console.log('   AMGAD PORTFOLIO ENGINE v2.3.0 [HOTFIX] ');
+console.log('   AMGAD PORTFOLIO ENGINE v2.4.0 [SHIELD] ');
 console.log('###########################################');
 console.log(`📍 Root: ${__dirname}`);
 console.log(`🔑 Key: ${process.env.API_KEY ? 'Active' : 'Missing'}`);
 console.log('###########################################\n');
 
+/**
+ * PHASE 1: COMPILER KERNEL (Highest Priority)
+ * Intercepts .ts and .tsx files before ANY other middleware.
+ */
+app.use(async (req, res, next) => {
+  const url = req.path;
+  if (url.endsWith('.ts') || url.endsWith('.tsx')) {
+    // 1. Resolve absolute file path
+    const relativePath = url.startsWith('/') ? url.slice(1) : url;
+    const filePath = path.resolve(__dirname, relativePath);
+
+    if (!existsSync(filePath)) {
+      console.error(`[❌ FILE NOT FOUND] ${url}`);
+      return next();
+    }
+
+    try {
+      console.log(`[🛠️ COMPILING] ${url}...`);
+      const content = await fs.readFile(filePath, 'utf8');
+
+      // 2. Transpile with esbuild
+      const result = await esbuild.transform(content, {
+        loader: url.endsWith('.tsx') ? 'tsx' : 'ts',
+        format: 'esm',
+        target: 'esnext',
+        sourcemap: 'inline',
+        jsx: 'automatic',
+        define: { 
+          'process.env.NODE_ENV': '"production"',
+          'process.env.API_KEY': `"${process.env.API_KEY || ''}"`,
+          'global': 'window'
+        }
+      });
+
+      // 3. FORCE STRICT MIME HEADERS
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      
+      return res.send(result.code);
+    } catch (err) {
+      console.error(`[❌ COMPILER ERROR] ${url}:`, err.message);
+      res.setHeader('Content-Type', 'application/javascript');
+      return res.status(200).send(`console.error("ESBUILD_TRANSFORM_ERROR at ${url}: ${err.message.replace(/"/g, "'")}");`);
+    }
+  }
+  next();
+});
+
+// PHASE 2: STANDARD MIDDLEWARE
 app.use(compression());
 app.use(express.json({ limit: '50mb' }));
 app.use(cors());
 
-// 1. Health check
-app.get('/api/health', (req, res) => res.json({ status: 'online', v: '2.3.0' }));
+// Health check
+app.get('/api/health', (req, res) => res.json({ status: 'online', v: '2.4.0' }));
 
-// 2. Injection for browser process.env shim
+// Injection for browser process.env shim
 app.get('/env-config.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
   res.send(`window.process = { env: { API_KEY: "${process.env.API_KEY || ''}", NODE_ENV: "production" } };`);
 });
 
-// 3. PRIORITY TS/TSX TRANSFORMER
-// We use a regex route to ensure this handler captures all .ts/.tsx requests specifically.
-app.get(/(.*)\.(ts|tsx)$/, async (req, res) => {
-  const url = req.path;
-  const relativePath = url.startsWith('/') ? url.slice(1) : url;
-  const filePath = path.join(__dirname, relativePath);
-
-  // Force JS MIME type immediately
-  res.type('application/javascript');
-
-  if (!existsSync(filePath)) {
-    console.warn(`[⚠️ 404] ${url} not found`);
-    return res.status(404).send(`console.error("File not found: ${url}");`);
-  }
-
-  try {
-    const content = await fs.readFile(filePath, 'utf8');
-    const result = await esbuild.transform(content, {
-      loader: url.endsWith('.tsx') ? 'tsx' : 'ts',
-      format: 'esm',
-      target: 'esnext',
-      sourcemap: 'inline',
-      jsx: 'automatic',
-      define: { 
-        'process.env.NODE_ENV': '"production"',
-        'process.env.API_KEY': `"${process.env.API_KEY || ''}"`,
-        'global': 'window'
-      }
-    });
-
-    return res.send(result.code);
-  } catch (err) {
-    console.error(`[❌ COMPILER ERROR] ${url}:`, err.message);
-    return res.send(`console.error("TRANSFORMATION_ERROR at ${url}: ${err.message.replace(/"/g, "'")}");`);
-  }
-});
-
-// 4. API Routes
+// Portfolio API
 app.get('/api/portfolio', async (req, res) => {
   try {
     if (!existsSync(DATA_PATH)) return res.json({ status: "initializing" });
@@ -90,10 +103,10 @@ app.post('/api/portfolio', async (req, res) => {
   }
 });
 
-// 5. Static files (served after the transformer)
+// Static files (JS/CSS/Assets)
 app.use(express.static(__dirname));
 
-// 6. SPA Fallback
+// SPA Fallback
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });

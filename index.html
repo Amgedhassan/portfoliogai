@@ -24,6 +24,17 @@
         color: rgba(255,255,255,0.4); z-index: 50; text-align: center;
       }
     </style>
+    
+    <!-- Module Monitor -->
+    <script>
+      window.addEventListener('error', function(e) {
+        if (e.target.tagName === 'SCRIPT') {
+          console.error('CRITICAL: Module failed to load:', e.target.src);
+          document.getElementById('boot-status').innerHTML = '<span style="color:#ef4444">LOAD_ERROR: ' + e.target.src.split("/").pop() + '</span>';
+        }
+      }, true);
+    </script>
+
     <script src="/env-config.js"></script>
     <script type="importmap">
 {
@@ -46,29 +57,34 @@
     
     <div id="root">
       <div class="boot-loader" id="boot-status">
-        [ SYSTEM_CORE_v2.3.0 ]<br/>
-        <span style="font-size: 8px; opacity: 0.5; margin-top: 10px; display: block;">Initializing Application...</span>
+        [ SYSTEM_CORE_v2.4.0 ]<br/>
+        <span style="font-size: 8px; opacity: 0.5; margin-top: 10px; display: block;">Initializing Application Kernel...</span>
       </div>
     </div>
     
     <script type="module">
       import * as THREE from 'three';
-      const canvas = document.getElementById('bg-canvas');
-      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-      renderer.setClearColor(0x020202, 1);
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.z = 50;
-      const ambientLight = new THREE.AmbientLight(0x404040);
-      scene.add(ambientLight);
-      function animate() { renderer.render(scene, camera); requestAnimationFrame(animate); }
-      animate();
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
+      try {
+        const canvas = document.getElementById('bg-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer.setClearColor(0x020202, 1);
         renderer.setSize(window.innerWidth, window.innerHeight);
-      });
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 50;
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
+        function animate() { renderer.render(scene, camera); requestAnimationFrame(animate); }
+        animate();
+        window.addEventListener('resize', () => {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        console.log("🎨 BG_ENGINE: Online");
+      } catch (e) {
+        console.error("🎨 BG_ENGINE: Failed", e);
+      }
     </script>
 
     <script type="module" src="/index.tsx"></script>
