@@ -2,8 +2,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Send, X, Bot } from 'lucide-react';
-import { askAmgadAI } from '../geminiService';
-import { PortfolioData } from '../types';
+import { askAmgadAI } from '../geminiService.ts';
+import { PortfolioData } from '../types.ts';
 
 interface AIAssistantProps {
   portfolioData: PortfolioData;

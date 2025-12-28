@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 8080;
 const DATA_PATH = path.join(__dirname, 'portfolio_data.json');
 
 console.log('\n\n###########################################');
-console.log('   AMGAD PORTFOLIO ENGINE v2.0.2 [SYNC] ');
+console.log('   AMGAD PORTFOLIO ENGINE v2.0.3 [SYNC] ');
 console.log('###########################################');
 console.log(`📍 Root: ${__dirname}`);
 console.log(`🔑 Key: ${process.env.API_KEY ? 'Active' : 'Missing'}`);
@@ -25,20 +25,7 @@ app.use(compression());
 app.use(express.json({ limit: '50mb' }));
 app.use(cors());
 
-// Webhook for automated git-sync (Optional)
-app.post('/api/git-sync', (req, res) => {
-  console.log('📥 Git Webhook Received. Triggering deploy...');
-  exec('sh deploy.sh', (error, stdout, stderr) => {
-    if (error) {
-      console.error(`Deploy error: ${error}`);
-      return res.status(500).send('Deploy failed');
-    }
-    console.log(stdout);
-    res.send('Sync complete');
-  });
-});
-
-app.get('/api/health', (req, res) => res.json({ status: 'online', v: '2.0.2' }));
+app.get('/api/health', (req, res) => res.json({ status: 'online', v: '2.0.3' }));
 
 app.get('/env-config.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
@@ -57,10 +44,12 @@ app.use(async (req, res, next) => {
         target: 'esnext',
         sourcemap: 'inline',
         jsx: 'automatic',
-        define: { 'process.env.NODE_ENV': '"production"' }
+        define: { 
+          'process.env.NODE_ENV': '"production"',
+          'process.env.API_KEY': `"${process.env.API_KEY || ''}"`
+        }
       });
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-      res.setHeader('X-Content-Type-Options', 'nosniff');
       return res.send(result.code);
     } catch (err) {
       console.error(`[❌ COMPILER ERROR] ${url}:`, err.message);

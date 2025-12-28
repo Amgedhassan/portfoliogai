@@ -1,13 +1,13 @@
-
 {
   "name": "amgad-portfolio",
-  "version": "2.0.1",
-  "description": "Strategic Designer Portfolio with Core v2 Engine",
+  "version": "2.0.2",
+  "description": "Strategic Designer Portfolio with Automation Engine",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
     "deploy": "chmod +x deploy.sh && ./deploy.sh",
+    "setup": "chmod +x setup.sh && ./setup.sh",
     "restart": "pm2 reload amgad-portfolio"
   },
   "dependencies": {
