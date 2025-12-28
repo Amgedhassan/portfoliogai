@@ -2,9 +2,9 @@
 import { PortfolioData, Project, Experience, MentorshipSession, ContactMessage, Course, Registration } from './types';
 import { PROJECTS, EXPERIENCES, CERTIFICATIONS, MENTORSHIP_SESSIONS, PERSONAL_INFO, COURSES } from './constants';
 
-// Determine the API URL based on where the code is running
-const isProd = window.location.hostname !== 'localhost';
-const API_BASE = isProd ? 'https://amgadsrvr.amgad.design/api' : '/api'; 
+// In production on your VPS, Nginx handles the routing. 
+// Using a relative path '/api' works best for both local dev and production.
+const API_BASE = '/api'; 
 
 const STORAGE_KEY = 'amgad_portfolio_data_v4';
 
@@ -43,6 +43,8 @@ export const DataService = {
       const response = await fetch(`${API_BASE}/portfolio`);
       if (response.ok) {
         const data = await response.json();
+        // If data is just {status: "initializing"}, we merge with INITIAL_DATA
+        if (data.status === "initializing") return INITIAL_DATA;
         return { ...INITIAL_DATA, ...data };
       }
     } catch (e) { console.warn("Using offline fallback."); }
@@ -52,11 +54,12 @@ export const DataService = {
   saveData: async (data: PortfolioData): Promise<void> => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     try {
-      await fetch(`${API_BASE}/portfolio`, {
+      const res = await fetch(`${API_BASE}/portfolio`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
+      if (!res.ok) throw new Error('Server write failed');
     } catch (e) {
       console.error("Cloud sync failed.");
     } finally {
