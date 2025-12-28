@@ -1,8 +1,8 @@
 
 {
   "name": "amgad-portfolio",
-  "version": "1.4.0",
-  "description": "Senior Designer Portfolio with On-the-fly Transpilation",
+  "version": "1.6.0",
+  "description": "Strategic Designer Portfolio with ESBuild Transpiler",
   "main": "server.js",
   "dependencies": {
     "compression": "^1.7.4",
