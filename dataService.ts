@@ -1,11 +1,8 @@
 
-import { PortfolioData, Project, Experience, MentorshipSession, ContactMessage, Course, Registration } from './types';
-import { PROJECTS, EXPERIENCES, CERTIFICATIONS, MENTORSHIP_SESSIONS, PERSONAL_INFO, COURSES } from './constants';
+import { PortfolioData, Project, Experience, MentorshipSession, ContactMessage, Course, Registration } from './types.ts';
+import { PROJECTS, EXPERIENCES, CERTIFICATIONS, MENTORSHIP_SESSIONS, PERSONAL_INFO, COURSES } from './constants.tsx';
 
-// In production on your VPS, Nginx handles the routing. 
-// Using a relative path '/api' works best for both local dev and production.
 const API_BASE = '/api'; 
-
 const STORAGE_KEY = 'amgad_portfolio_data_v4';
 
 const INITIAL_DATA: PortfolioData = {
@@ -43,7 +40,6 @@ export const DataService = {
       const response = await fetch(`${API_BASE}/portfolio`);
       if (response.ok) {
         const data = await response.json();
-        // If data is just {status: "initializing"}, we merge with INITIAL_DATA
         if (data.status === "initializing") return INITIAL_DATA;
         return { ...INITIAL_DATA, ...data };
       }

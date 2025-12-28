@@ -6,23 +6,27 @@ import {
   ExternalLink, Play, Zap, Shield, Target, TrendingUp, BarChart3, 
   Rocket, CheckCircle2, Globe, Cpu, MousePointer2 
 } from 'lucide-react';
-import Navbar from './components/Navbar';
-import ProjectDetail from './components/ProjectDetail';
-import CoursePage from './components/CoursePage';
-import AboutDetail from './components/AboutDetail';
-import MentorshipDetail from './components/MentorshipDetail';
-import Dashboard from './components/Dashboard';
-import Login from './components/Login';
-import ProjectsGallery from './components/ProjectsGallery';
-import CoursesGallery from './components/CoursesGallery';
-import ContactForm from './components/ContactForm';
-import Footer from './components/Footer';
-import SophisticatedCarousel from './components/SophisticatedCarousel';
-import VerticalTimeline from './components/VerticalTimeline';
-import SceneBackground from './components/SceneBackground';
-import PageTransition from './components/PageTransition';
-import { DataService } from './dataService';
-import { Project, PortfolioData, AsyncState, Course } from './types';
+import Navbar from './components/Navbar.tsx';
+import ProjectDetail from './components/ProjectDetail.tsx';
+import CoursePage from './components/CoursePage.tsx';
+import AboutDetail from './components/AboutDetail.tsx';
+import MentorshipDetail from './components/MentorshipDetail.tsx';
+import Dashboard from './components/Dashboard.tsx';
+import Login from './components/Login.tsx';
+import ProjectsGallery from './components/ProjectsGallery.tsx';
+import CoursesGallery from './components/CoursesGallery.tsx';
+import ContactForm from './components/ContactForm.tsx';
+import Footer from './components/Footer.tsx';
+import SophisticatedCarousel from './components/SophisticatedCarousel.tsx';
+import VerticalTimeline from './components/VerticalTimeline.tsx';
+import SceneBackground from './components/SceneBackground.tsx';
+import PageTransition from './components/PageTransition.tsx';
+// Fix: Import AIAssistant component
+import AIAssistant from './components/AIAssistant.tsx';
+import { DataService } from './dataService.ts';
+import { Project, PortfolioData, AsyncState, Course } from './types.ts';
+// Fix: Import PERSONAL_INFO used in the contact section
+import { PERSONAL_INFO } from './constants.tsx';
 
 export type View = 
   | { type: 'home'; anchor?: string }
@@ -379,7 +383,7 @@ const App: React.FC = () => {
                         Currently accepting freelance projects for Q4 2025. Whether you need an enterprise overhaul or a startup launch, let's talk logic.
                       </p>
                       <div className="flex flex-col gap-4">
-                        <a href={`mailto:${portfolio.data.about?.summary ? 'amgedhassan@outlook.com' : ''}`} className="text-white font-black uppercase text-sm tracking-widest flex items-center gap-3 hover:text-indigo-400 transition-colors">
+                        <a href={`mailto:${PERSONAL_INFO.email}`} className="text-white font-black uppercase text-sm tracking-widest flex items-center gap-3 hover:text-indigo-400 transition-colors">
                           <ExternalLink className="w-5 h-5" /> Direct: amgedhassan@outlook.com
                         </a>
                       </div>
@@ -463,6 +467,11 @@ const App: React.FC = () => {
           />
         )}
       </AnimatePresence>
+
+      {/* Fix: Display AIAssistant on all non-dashboard views when portfolio data is loaded */}
+      {currentView.type !== 'dashboard' && portfolio.data && (
+        <AIAssistant portfolioData={portfolio.data} />
+      )}
     </div>
   );
 };
