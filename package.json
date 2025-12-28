@@ -1,17 +1,9 @@
 
 {
   "name": "amgad-portfolio",
-  "version": "1.1.0",
-  "description": "Dynamic Senior Product Designer Portfolio with Node.js Persistence",
+  "version": "1.3.0",
+  "description": "Strategic Portfolio Engine with On-the-fly TSX Transpilation",
   "main": "server.js",
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
-    "prod": "NODE_ENV=production pm2 start server.js --name amgad-portfolio"
-  },
   "dependencies": {
     "compression": "^1.7.4",
     "express": "^4.18.2",
