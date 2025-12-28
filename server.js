@@ -12,7 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 console.log('\n\n###########################################');
-console.log('   AMGAD PORTFOLIO ENGINE v1.8.0 ACTIVE   ');
+console.log('   AMGAD PORTFOLIO ENGINE v1.9.0 ACTIVE   ');
 console.log('###########################################');
 console.log(`📍 Root: ${__dirname}`);
 console.log(`🔑 Key: ${process.env.API_KEY ? 'Active' : 'Missing'}`);
@@ -22,47 +22,44 @@ app.use(compression());
 app.use(express.json({ limit: '50mb' }));
 app.use(cors());
 
-// Health check and environment
-app.get('/api/health', (req, res) => res.json({ status: 'online', v: '1.8.0' }));
+// Health check
+app.get('/api/health', (req, res) => res.json({ status: 'online', v: '1.9.0' }));
+
+// Environment injection
 app.get('/env-config.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
   res.send(`window.process = { env: { API_KEY: "${process.env.API_KEY || ''}" } };`);
 });
 
 /**
- * CORE COMPILER MIDDLEWARE (V1.8.0)
- * This must run BEFORE express.static to catch .tsx requests.
+ * HIGH-PRIORITY TRANSPILER ROUTES
+ * These catch requests BEFORE any static middleware or file serving.
  */
-app.use(async (req, res, next) => {
-  const isTsx = req.path.endsWith('.tsx');
-  const isTs = req.path.endsWith('.ts');
+app.get(['/*.tsx', '/*.ts'], async (req, res) => {
+  const fileName = req.path;
+  const filePath = path.join(__dirname, fileName);
+  
+  console.log(`[🚀 Compiler] Intercepted: ${fileName}`);
 
-  if (isTsx || isTs) {
-    const filePath = path.join(__dirname, req.path);
-    console.log(`[Transpiler] Processing: ${req.path}`);
+  try {
+    const content = await fs.readFile(filePath, 'utf8');
+    const result = await esbuild.transform(content, {
+      loader: fileName.endsWith('.tsx') ? 'tsx' : 'ts',
+      format: 'esm',
+      target: 'esnext',
+      sourcemap: 'inline',
+      jsx: 'automatic',
+      define: { 'process.env.NODE_ENV': '"production"' }
+    });
 
-    try {
-      const content = await fs.readFile(filePath, 'utf8');
-      const result = await esbuild.transform(content, {
-        loader: isTsx ? 'tsx' : 'ts',
-        format: 'esm',
-        target: 'esnext',
-        sourcemap: 'inline',
-        jsx: 'automatic',
-        define: { 'process.env.NODE_ENV': '"production"' }
-      });
-
-      // CRITICAL: Force the browser to treat this as JavaScript
-      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-      res.setHeader('X-Content-Type-Options', 'nosniff'); // Security best practice
-      return res.send(result.code);
-    } catch (err) {
-      console.error(`[Transpiler] Error in ${req.path}:`, err.message);
-      res.setHeader('Content-Type', 'application/javascript');
-      return res.status(500).send(`console.error("Transpiler Error: ${err.message.replace(/"/g, "'")}");`);
-    }
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    return res.send(result.code);
+  } catch (err) {
+    console.error(`[🔥 Compiler Error] ${fileName}:`, err.message);
+    res.setHeader('Content-Type', 'application/javascript');
+    return res.status(500).send(`console.error("TRANSPILE_FAIL: ${err.message.replace(/"/g, "'")}");`);
   }
-  next();
 });
 
 // Portfolio Data Endpoints
@@ -81,14 +78,14 @@ app.post('/api/portfolio', async (req, res) => {
   } catch (err) { res.status(500).json({ error: "Save error" }); }
 });
 
-// Static assets
+// Serve everything else as static (images, etc)
 app.use(express.static(__dirname));
 
-// SPA Fallback
+// SPA Fallback for any other route (returns index.html)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 v1.8.0 Engine ready at http://0.0.0.0:${PORT}`);
+  console.log(`✅ System logic ready at http://0.0.0.0:${PORT}`);
 });
