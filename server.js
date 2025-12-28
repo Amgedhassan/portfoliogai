@@ -18,8 +18,6 @@ console.log(`Node Version: ${process.version}`);
 console.log(`Target Port: ${PORT}`);
 if (!process.env.API_KEY) {
   console.error('CRITICAL: API_KEY is missing from environment variables!');
-} else {
-  console.log('API_KEY: Detected (hidden)');
 }
 console.log('--------------------------');
 
@@ -34,25 +32,44 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// --- THE FIX: ON-THE-FLY TRANSPILLER ---
-// This middleware intercepts requests for .ts and .tsx files,
-// transpiles them to JS using esbuild, and serves them with the correct MIME type.
-app.get(['/*.ts', '/*.tsx'], async (req, res, next) => {
-  const filePath = path.join(__dirname, req.path);
+/**
+ * RECURSIVE ON-THE-FLY TRANSPILLER
+ * Matches any path ending in .ts or .tsx regardless of directory depth.
+ */
+app.get(/\.(ts|tsx)$/, async (req, res, next) => {
+  // Extract file path from URL and clean it
+  const urlPath = req.path.startsWith('/') ? req.path : `/${req.path}`;
+  const filePath = path.join(__dirname, urlPath);
+
   try {
     const content = await fs.readFile(filePath, 'utf8');
+    
+    // Transpile using esbuild
     const result = await esbuild.transform(content, {
-      loader: req.path.endsWith('.tsx') ? 'tsx' : 'ts',
+      loader: urlPath.endsWith('.tsx') ? 'tsx' : 'ts',
       format: 'esm',
       target: 'esnext',
       sourcemap: 'inline',
+      // 'automatic' handles React 18/19 JSX without requiring "import React" in every file
+      jsx: 'automatic', 
+      define: {
+        'process.env.NODE_ENV': '"production"'
+      }
     });
     
-    res.setHeader('Content-Type', 'application/javascript');
+    console.log(`[Transpiler] Processed: ${urlPath}`);
+    
+    // Crucial: Set correct MIME type to satisfy strict browser module checks
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
     res.send(result.code);
   } catch (err) {
-    console.error(`Transpilation error for ${req.path}:`, err);
-    next(); // Fallback to static server if it fails
+    if (err.code === 'ENOENT') {
+      console.warn(`[Transpiler] File not found: ${filePath}`);
+      res.status(404).send('File not found');
+    } else {
+      console.error(`[Transpiler] Error for ${urlPath}:`, err);
+      res.status(500).send('Internal Server Error during transpilation');
+    }
   }
 });
 
@@ -77,7 +94,6 @@ app.get('/api/portfolio', async (req, res) => {
     const data = await fs.readFile(DATA_PATH, 'utf8');
     res.json(JSON.parse(data));
   } catch (error) {
-    console.log('Note: Data file not found, providing initial defaults.');
     res.json({ status: "initializing" });
   }
 });
@@ -95,11 +111,12 @@ app.post('/api/portfolio', async (req, res) => {
 // Serve static files (HTML, CSS, Images, etc.)
 app.use(express.static(__dirname));
 
+// Single Page Application Fallback
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Production Server active at http://127.0.0.1:${PORT}`);
-  console.log('Transpilation Engine: Active (esbuild)');
+  console.log(`🚀 Senior Design Portfolio Engine active at http://127.0.0.1:${PORT}`);
+  console.log('Mode: Production-Ready Transpilation (esbuild)');
 });
