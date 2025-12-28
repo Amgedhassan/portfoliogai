@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 8080;
 const DATA_PATH = path.join(__dirname, 'portfolio_data.json');
 
 console.log('\n\n###########################################');
-console.log('   AMGAD PORTFOLIO ENGINE v2.1.0 [FIX] ');
+console.log('   AMGAD PORTFOLIO ENGINE v2.3.0 [HOTFIX] ');
 console.log('###########################################');
 console.log(`📍 Root: ${__dirname}`);
 console.log(`🔑 Key: ${process.env.API_KEY ? 'Active' : 'Missing'}`);
@@ -24,29 +24,31 @@ app.use(compression());
 app.use(express.json({ limit: '50mb' }));
 app.use(cors());
 
-// Health check
-app.get('/api/health', (req, res) => res.json({ status: 'online', v: '2.1.0' }));
+// 1. Health check
+app.get('/api/health', (req, res) => res.json({ status: 'online', v: '2.3.0' }));
 
-// Injection for browser process.env shim
+// 2. Injection for browser process.env shim
 app.get('/env-config.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
   res.send(`window.process = { env: { API_KEY: "${process.env.API_KEY || ''}", NODE_ENV: "production" } };`);
 });
 
-/**
- * EXPLICIT ROUTE HANDLER FOR TS/TSX FILES
- * This ensures the browser receives valid JS with the correct MIME type.
- */
-app.get(['/*.tsx', '/*.ts', '/components/*.tsx', '/components/*.ts'], async (req, res, next) => {
-  const url = req.path; // Use req.path to ignore query strings
+// 3. PRIORITY TS/TSX TRANSFORMER
+// We use a regex route to ensure this handler captures all .ts/.tsx requests specifically.
+app.get(/(.*)\.(ts|tsx)$/, async (req, res) => {
+  const url = req.path;
   const relativePath = url.startsWith('/') ? url.slice(1) : url;
   const filePath = path.join(__dirname, relativePath);
 
-  try {
-    if (!existsSync(filePath)) {
-      return next(); // Fall through to 404/static
-    }
+  // Force JS MIME type immediately
+  res.type('application/javascript');
 
+  if (!existsSync(filePath)) {
+    console.warn(`[⚠️ 404] ${url} not found`);
+    return res.status(404).send(`console.error("File not found: ${url}");`);
+  }
+
+  try {
     const content = await fs.readFile(filePath, 'utf8');
     const result = await esbuild.transform(content, {
       loader: url.endsWith('.tsx') ? 'tsx' : 'ts',
@@ -56,24 +58,22 @@ app.get(['/*.tsx', '/*.ts', '/components/*.tsx', '/components/*.ts'], async (req
       jsx: 'automatic',
       define: { 
         'process.env.NODE_ENV': '"production"',
-        'process.env.API_KEY': `"${process.env.API_KEY || ''}"`
+        'process.env.API_KEY': `"${process.env.API_KEY || ''}"`,
+        'global': 'window'
       }
     });
 
-    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
     return res.send(result.code);
   } catch (err) {
     console.error(`[❌ COMPILER ERROR] ${url}:`, err.message);
-    res.setHeader('Content-Type', 'application/javascript');
-    return res.status(500).send(`console.error("COMPILATION_ERROR: ${err.message}");`);
+    return res.send(`console.error("TRANSFORMATION_ERROR at ${url}: ${err.message.replace(/"/g, "'")}");`);
   }
 });
 
+// 4. API Routes
 app.get('/api/portfolio', async (req, res) => {
   try {
-    if (!existsSync(DATA_PATH)) {
-      return res.json({ status: "initializing" });
-    }
+    if (!existsSync(DATA_PATH)) return res.json({ status: "initializing" });
     const data = await fs.readFile(DATA_PATH, 'utf8');
     res.json(JSON.parse(data));
   } catch (err) {
@@ -90,9 +90,13 @@ app.post('/api/portfolio', async (req, res) => {
   }
 });
 
-// Static files and SPA fallback
+// 5. Static files (served after the transformer)
 app.use(express.static(__dirname));
-app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+
+// 6. SPA Fallback
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Engine live at http://0.0.0.0:${PORT}`);
