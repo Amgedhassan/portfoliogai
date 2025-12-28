@@ -6,82 +6,78 @@ const compression = require('compression');
 const cors = require('cors');
 const esbuild = require('esbuild');
 
-// Load .env variables
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-console.log('-------------------------------------------');
-console.log('🚀 AMGAD PORTFOLIO ENGINE v1.3.0');
-console.log(`📅 Started: ${new Date().toISOString()}`);
-console.log(`📦 Node: ${process.version}`);
-if (!process.env.API_KEY) {
-  console.warn('⚠️ WARNING: API_KEY not found in .env file!');
-}
-console.log('-------------------------------------------');
+// UNIQUE HEADER - If you don't see this in 'pm2 logs', you are running the wrong code!
+console.log('===========================================');
+console.log('🚀 SYSTEM BOOT: AMGAD DESIGN ENGINE v1.4.0');
+console.log('===========================================');
+console.log(`Working Directory: ${__dirname}`);
+console.log(`API_KEY Present: ${!!process.env.API_KEY}`);
 
 app.use(compression());
 app.use(express.json({ limit: '50mb' }));
 app.use(cors());
 
 /**
- * TSX/TS TRANSPILLER MIDDLEWARE
- * This MUST be defined before express.static to work.
- * It catches requests for .tsx files and sends back compiled JavaScript.
+ * TSX/TS COMPILER MIDDLEWARE
+ * This intercepts any request ending in .tsx or .ts
  */
-app.get(/\.tsx?(\?.*)?$/, async (req, res) => {
-  // Get the clean path without query strings
+app.get(/\.tsx?$/, async (req, res) => {
   const urlPath = req.path;
   const filePath = path.join(__dirname, urlPath);
 
   try {
     const content = await fs.readFile(filePath, 'utf8');
     
-    // Convert JSX/TSX to JS using esbuild
+    // Convert TSX -> Browser JS on the fly
     const result = await esbuild.transform(content, {
       loader: urlPath.endsWith('.tsx') ? 'tsx' : 'ts',
       format: 'esm',
       target: 'esnext',
       sourcemap: 'inline',
-      jsx: 'automatic', // Important: handles React 18/19 without explicit imports
+      jsx: 'automatic', // Critical for React 18/19
       define: {
         'process.env.NODE_ENV': '"production"'
       }
     });
     
-    console.log(`[Transpiler] Compiled: ${urlPath}`);
+    console.log(`[Transpiler] COMPLIED: ${urlPath}`);
     
-    // Force the browser to treat this as a JavaScript module
+    // Explicitly set MIME type so the browser doesn't block it
     res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
     res.send(result.code);
   } catch (err) {
     if (err.code === 'ENOENT') {
-      console.error(`[Transpiler] 404 Not Found: ${urlPath}`);
+      console.error(`[Transpiler] 404: ${urlPath}`);
       res.status(404).send('File not found');
     } else {
-      console.error(`[Transpiler] Error in ${urlPath}:`, err.message);
-      res.status(500).send('Internal Transpilation Error');
+      console.error(`[Transpiler] ERROR ${urlPath}:`, err.message);
+      res.status(500).send('Compilation failed');
     }
   }
 });
 
-// Environment configuration for frontend (Gemini API)
+// Provides environment variables to the browser
 app.get('/env-config.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
   res.send(`window.process = { env: { API_KEY: "${process.env.API_KEY || ''}" } };`);
 });
 
-// API Endpoints
-app.get('/api/health', (req, res) => res.json({ status: 'active', node: process.version }));
-
+// API Routes
 const DATA_PATH = path.join(__dirname, 'portfolio_data.json');
+
+app.get('/api/health', (req, res) => res.json({ status: 'online', version: '1.4.0' }));
+
 app.get('/api/portfolio', async (req, res) => {
   try {
     const data = await fs.readFile(DATA_PATH, 'utf8');
     res.json(JSON.parse(data));
   } catch {
-    res.json({ status: "initializing" });
+    res.json({ status: "new_installation" });
   }
 });
 
@@ -90,19 +86,19 @@ app.post('/api/portfolio', async (req, res) => {
     await fs.writeFile(DATA_PATH, JSON.stringify(req.body, null, 2));
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: "Cloud sync failed" });
+    res.status(500).json({ error: "Save failed" });
   }
 });
 
-// Serve static assets (CSS, images, etc)
+// Static assets
 app.use(express.static(__dirname));
 
-// Fallback for SPA (Single Page Application)
+// Single Page Application Fallback
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Server listening on port ${PORT}`);
-  console.log(`🌐 Application URL: http://amgad.design`);
+  console.log(`✅ ENGINE ACTIVE ON PORT ${PORT}`);
+  console.log('-------------------------------------------');
 });

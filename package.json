@@ -1,8 +1,8 @@
 
 {
   "name": "amgad-portfolio",
-  "version": "1.3.0",
-  "description": "Strategic Portfolio Engine with On-the-fly TSX Transpilation",
+  "version": "1.4.0",
+  "description": "Senior Designer Portfolio with On-the-fly Transpilation",
   "main": "server.js",
   "dependencies": {
     "compression": "^1.7.4",
