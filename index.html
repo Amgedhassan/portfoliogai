@@ -8,303 +8,86 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-      :root {
-        --bg-color: #020202;
-        --accent-color: #818cf8; 
-      }
+      :root { --bg-color: #020202; --accent-color: #818cf8; }
       body {
         font-family: 'Plus Jakarta Sans', sans-serif;
         scroll-behavior: smooth;
-        background-color: transparent;
+        background-color: var(--bg-color);
         color: #f8fafc;
         cursor: none;
         margin: 0;
         overflow-x: hidden;
       }
-      
-      html {
-        background-color: var(--bg-color);
-      }
-
       .noise-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 1000;
-        pointer-events: none;
-        opacity: 0.03;
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        z-index: 1000; pointer-events: none; opacity: 0.03;
         background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3%3Ffilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/feTurbulence%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
       }
-
-      ::-webkit-scrollbar {
-        width: 4px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #020202;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #1e293b;
-        border-radius: 10px;
-      }
-
-      #cursor-dot {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 6px;
-        height: 6px;
-        background-color: #fff;
-        border-radius: 50%;
-        z-index: 100001;
-        pointer-events: none;
-        box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
-      }
-
-      #cursor-ring {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 40px;
-        height: 40px;
-        border: 1px solid rgba(129, 140, 248, 0.5);
-        border-radius: 50%;
-        z-index: 100000;
-        pointer-events: none;
-        transition: width 0.4s cubic-bezier(0.23, 1, 0.32, 1), 
-                    height 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-      }
-
-      #bg-canvas {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -10;
-        pointer-events: none;
-      }
-
-      .cursor-ring-hover {
-        width: 80px !important;
-        height: 80px !important;
-        background-color: rgba(129, 140, 248, 0.1);
-        border-color: rgba(129, 140, 248, 1) !important;
-      }
-
-      .cursor-dot-hover {
-        transform: scale(0) !important;
-        opacity: 0;
-      }
-
-      a, button, [role="button"], .clickable {
-        cursor: none !important;
+      #cursor-dot { position: fixed; top: 0; left: 0; width: 6px; height: 6px; background-color: #fff; border-radius: 50%; z-index: 100001; pointer-events: none; }
+      #cursor-ring { position: fixed; top: 0; left: 0; width: 40px; height: 40px; border: 1px solid rgba(129, 140, 248, 0.5); border-radius: 50%; z-index: 100000; pointer-events: none; transition: width 0.4s, height 0.4s; }
+      #bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -10; }
+      #root { position: relative; z-index: 10; }
+      .boot-loader {
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5em;
+        color: rgba(255,255,255,0.4); z-index: 50;
       }
     </style>
-    <!-- Dynamic Environment Config -->
     <script src="/env-config.js"></script>
     <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "framer-motion": "https://esm.sh/framer-motion@11.11.11?external=react,react-dom",
+    "lucide-react": "https://esm.sh/lucide-react@0.454.0?external=react",
+    "three": "https://esm.sh/three@0.160.0",
+    "@google/genai": "https://esm.sh/@google/genai@1.34.0",
     "react/": "https://esm.sh/react@^19.2.3/",
-    "framer-motion": "https://esm.sh/framer-motion@^11.11.11",
-    "lucide-react": "https://esm.sh/lucide-react@^0.454.0",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
-    "three": "https://esm.sh/three@0.160.0"
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
   }
 }
 </script>
-</head>
+  </head>
   <body>
     <canvas id="bg-canvas"></canvas>
-    <div class="noise-overlay" aria-hidden="true"></div>
-    <div id="root"></div>
+    <div class="noise-overlay"></div>
+    
+    <div id="root">
+      <div class="boot-loader" id="boot-text">Initialising React Engine...</div>
+    </div>
     
     <div id="cursor-dot"></div>
     <div id="cursor-ring"></div>
     
+    <!-- Three.js Visual Layer -->
     <script type="module">
       import * as THREE from 'three';
-
       const canvas = document.getElementById('bg-canvas');
-      const renderer = new THREE.WebGLRenderer({ 
-        canvas, 
-        alpha: false, 
-        antialias: true,
-        powerPreference: "high-performance" 
-      });
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
       renderer.setClearColor(0x020202, 1);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(window.innerWidth, window.innerHeight);
-
       const scene = new THREE.Scene();
-      scene.fog = new THREE.Fog(0x020202, 20, 300);
-
       const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.z = 50;
       
-      // DESIGN LAYER 1: The Parametric Topography
-      const meshSize = 400;
-      const meshSegments = 80;
-      const terrainGeo = new THREE.PlaneGeometry(meshSize, meshSize, meshSegments, meshSegments);
-      terrainGeo.rotateX(-Math.PI / 2);
-
-      const terrainMat = new THREE.MeshStandardMaterial({
-        color: 0x818cf8,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.15,
-        emissive: 0x4f46e5,
-        emissiveIntensity: 0.5
-      });
-
-      const terrain = new THREE.Mesh(terrainGeo, terrainMat);
-      scene.add(terrain);
-
-      // DESIGN LAYER 2: UI Component Atoms
-      const atomCount = 40;
-      const atomGroup = new THREE.Group();
-      
-      const boxGeo = new THREE.BoxGeometry(4, 4, 4);
-      const ringGeo = new THREE.RingGeometry(2, 3, 32);
-      const circleGeo = new THREE.CircleGeometry(2.5, 32);
-      
-      const atomMat = new THREE.MeshBasicMaterial({
-        color: 0x818cf8,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.2
-      });
-
-      const atoms = [];
-      for(let i=0; i<atomCount; i++) {
-        const type = Math.random();
-        let geometry;
-        if(type < 0.33) geometry = boxGeo;
-        else if(type < 0.66) geometry = ringGeo;
-        else geometry = circleGeo;
-
-        const mesh = new THREE.Mesh(geometry, atomMat);
-        mesh.position.set(
-          (Math.random() - 0.5) * 200,
-          (Math.random() - 0.5) * 100,
-          (Math.random() - 0.5) * 300
-        );
-        mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
-        mesh.userData = {
-          speed: 0.05 + Math.random() * 0.1,
-          rotSpeed: 0.005 + Math.random() * 0.01
-        };
-        atomGroup.add(mesh);
-        atoms.push(mesh);
-      }
-      scene.add(atomGroup);
-
-      scene.add(new THREE.AmbientLight(0xffffff, 0.1));
-      const pLight = new THREE.PointLight(0x818cf8, 150, 500);
-      scene.add(pLight);
-
-      let scrollY = 0;
-      let lastScrollY = 0;
-      let scrollVelocity = 0;
-      let targetMouseX = 0, targetMouseY = 0;
-      let mouseX = 0, mouseY = 0;
-
-      window.addEventListener('scroll', () => {
-        scrollY = window.scrollY;
-        scrollVelocity = Math.abs(scrollY - lastScrollY) * 0.05;
-        lastScrollY = scrollY;
-      }, { passive: true });
-
-      window.addEventListener('mousemove', (e) => {
-        targetMouseX = (e.clientX - window.innerWidth / 2) * 0.03;
-        targetMouseY = (e.clientY - window.innerHeight / 2) * 0.03;
-      });
-
-      const positionAttribute = terrainGeo.getAttribute('position');
-      const vertexCount = positionAttribute.count;
-      const originalY = new Float32Array(vertexCount);
-      for (let i = 0; i < vertexCount; i++) {
-        originalY[i] = positionAttribute.getY(i);
-      }
-
-      function animate(time) {
-        time *= 0.0005;
-        mouseX += (targetMouseX - mouseX) * 0.05;
-        mouseY += (targetMouseY - mouseY) * 0.05;
-        scrollVelocity *= 0.96;
-
-        const travelZ = scrollY * 0.15;
-        camera.position.z = 120 - travelZ;
-        camera.position.x = mouseX * 0.5;
-        camera.position.y = 40 - mouseY * 0.5;
-        camera.lookAt(mouseX * 0.2, -10, -travelZ - 150);
-
-        pLight.position.set(camera.position.x, camera.position.y + 20, camera.position.z + 10);
-
-        const terrainSpacing = meshSize;
-        const terrainOffset = Math.floor(travelZ / terrainSpacing) * terrainSpacing;
-        terrain.position.z = -terrainOffset;
-
-        for (let i = 0; i < vertexCount; i++) {
-          const vx = positionAttribute.getX(i);
-          const vz = positionAttribute.getZ(i);
-          
-          const dist = Math.sqrt(vx * vx + vz * vz);
-          const wave1 = Math.sin(vx * 0.05 + time + (travelZ * 0.01)) * 4;
-          const wave2 = Math.cos(vz * 0.08 + time * 1.5) * 3;
-          const noise = (wave1 + wave2) * (1 + scrollVelocity);
-          
-          positionAttribute.setY(i, originalY[i] + noise);
-        }
-        positionAttribute.needsUpdate = true;
-
-        atoms.forEach(atom => {
-          atom.position.z -= atom.userData.speed + (scrollVelocity * 0.5);
-          atom.rotation.x += atom.userData.rotSpeed;
-          atom.rotation.y += atom.userData.rotSpeed;
-
-          const relZ = atom.position.z + travelZ;
-          if(relZ < -200) atom.position.z += 400;
-          if(relZ > 200) atom.position.z -= 400;
-        });
-
+      function animate() {
         renderer.render(scene, camera);
         requestAnimationFrame(animate);
       }
-      requestAnimationFrame(animate);
+      animate();
 
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-
+      // Simple cursor follower
       const dot = document.getElementById('cursor-dot');
       const ring = document.getElementById('cursor-ring');
-      let cx = 0, cy = 0, dx = 0, dy = 0, rx = 0, ry = 0;
-      document.addEventListener('mousemove', (e) => { cx = e.clientX; cy = e.clientY; });
-      function updateCursor() {
-        dx += (cx - dx) * 0.3; dy += (cy - dy) * 0.3;
-        rx += (cx - rx) * 0.12; ry += (cy - ry) * 0.12;
-        dot.style.transform = `translate3d(${dx - 3}px, ${dy - 3}px, 0)`;
-        ring.style.transform = `translate3d(${rx - 20}px, ${ry - 20}px, 0)`;
-        requestAnimationFrame(updateCursor);
-      }
-      updateCursor();
-
-      const bindHovers = () => {
-        document.querySelectorAll('button, a, .clickable').forEach(el => {
-          el.addEventListener('mouseenter', () => { ring.classList.add('cursor-ring-hover'); dot.classList.add('cursor-dot-hover'); });
-          el.addEventListener('mouseleave', () => { ring.classList.remove('cursor-ring-hover'); dot.classList.remove('cursor-dot-hover'); });
-        });
-      };
-      bindHovers();
-      new MutationObserver(bindHovers).observe(document.body, { childList: true, subtree: true });
+      document.addEventListener('mousemove', (e) => {
+        dot.style.transform = `translate3d(${e.clientX - 3}px, ${e.clientY - 3}px, 0)`;
+        ring.style.transform = `translate3d(${e.clientX - 20}px, ${e.clientY - 20}px, 0)`;
+      });
     </script>
-    <!-- Import app index as module -->
-    <script type="module" src="./index.tsx"></script>
+
+    <!-- React Application Layer -->
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
