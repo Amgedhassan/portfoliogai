@@ -1,166 +1,256 @@
 
-import { PortfolioData, Project, Experience, MentorshipSession, ContactMessage, Course, Registration } from './types.ts';
-import { PROJECTS, EXPERIENCES, CERTIFICATIONS, MENTORSHIP_SESSIONS, PERSONAL_INFO, COURSES } from './constants.tsx';
+import { 
+  PortfolioData, Project, Experience, MentorshipSession, 
+  ContactMessage, Course, Registration, MentorshipSlot, Booking 
+} from './types.ts';
+import { 
+  PERSONAL_INFO, PROJECTS, COURSES, EXPERIENCES, 
+  MENTORSHIP_SESSIONS 
+} from './constants.tsx';
 
-const API_BASE = '/api'; 
-const STORAGE_KEY = 'amgad_portfolio_data_v4';
+// Production API Gateway
+const BACKEND_URL = 'https://amgadsrvr.amgad.design/api';
 
-const INITIAL_DATA: PortfolioData = {
+/**
+ * Constructs the default portfolio state from static constants.
+ * This acts as our safety net when the database is offline.
+ */
+const getFallbackData = (): PortfolioData => ({
   about: {
     title: PERSONAL_INFO.title,
     summary: PERSONAL_INFO.summary,
-    philosophy: "Empathy-Driven Efficiency: Designing tools that respect the user's time and cognitive load."
+    philosophy: "Design with intent. Scale with logic."
   },
   projects: PROJECTS,
   experiences: EXPERIENCES,
-  certifications: CERTIFICATIONS,
+  certifications: [],
   courses: COURSES,
   registrations: [],
   mentorship: MENTORSHIP_SESSIONS,
+  slots: [],
+  bookings: [],
   messages: []
-};
+});
 
-function safeJsonParse(str: string | null): any {
-  if (!str) return null;
+const fetchApi = async (endpoint: string, options?: RequestInit) => {
   try {
-    return JSON.parse(str);
-  } catch (e) { return null; }
-}
+    const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || `API Request Failed: ${response.status}`);
+    }
+    return response.json();
+  } catch (err) {
+    throw err;
+  }
+};
 
 export const DataService = {
   checkConnection: async (): Promise<boolean> => {
     try {
-      const res = await fetch(`${API_BASE}/health`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const res = await fetch(`${BACKEND_URL}/portfolio`, { 
+        method: 'HEAD',
+        signal: controller.signal 
+      });
+      clearTimeout(timeoutId);
       return res.ok;
-    } catch { return false; }
+    } catch {
+      return false;
+    }
   },
 
   getData: async (): Promise<PortfolioData> => {
     try {
-      const response = await fetch(`${API_BASE}/portfolio`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.status === "initializing") return INITIAL_DATA;
-        return { ...INITIAL_DATA, ...data };
-      }
-    } catch (e) { console.warn("Using offline fallback."); }
-    return safeJsonParse(localStorage.getItem(STORAGE_KEY)) || INITIAL_DATA;
-  },
-
-  saveData: async (data: PortfolioData): Promise<void> => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    try {
-      const res = await fetch(`${API_BASE}/portfolio`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error('Server write failed');
-    } catch (e) {
-      console.error("Cloud sync failed.");
-    } finally {
-      window.dispatchEvent(new Event('portfolio-updated'));
+      return await fetchApi('/portfolio');
+    } catch (err) {
+      console.warn("⚠️ DataService: Production backend unreachable. Falling back to static assets.", err);
+      return getFallbackData();
     }
   },
 
   updateAbout: async (about: PortfolioData['about']): Promise<void> => {
-    const data = await DataService.getData();
-    data.about = about;
-    await DataService.saveData(data);
+    try {
+      await fetchApi('/about', {
+        method: 'POST',
+        body: JSON.stringify(about),
+      });
+    } catch (err) {
+      console.error("Failed to update about in DB", err);
+    }
+    window.dispatchEvent(new Event('portfolio-updated'));
+  },
+
+  getAvailableSlots: async (sessionId: string): Promise<MentorshipSlot[]> => {
+    try {
+      const data: PortfolioData = await fetchApi('/portfolio');
+      const now = new Date();
+      return data.slots.filter(s => 
+        s.sessionId === sessionId && 
+        s.status === 'available' && 
+        new Date(s.dateTime) > now
+      );
+    } catch {
+      return [];
+    }
+  },
+
+  createBooking: async (bookingData: Omit<Booking, 'id' | 'timestamp' | 'paymentStatus' | 'paymentRef'>): Promise<Booking> => {
+    const newBooking = {
+      ...bookingData,
+      id: `book-${Date.now()}`,
+      paymentRef: `TRX-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+      timestamp: new Date().toISOString(),
+      paymentStatus: 'paid' as const
+    };
+    
+    try {
+      return await fetchApi('/bookings', {
+        method: 'POST',
+        body: JSON.stringify(newBooking),
+      });
+    } catch {
+      window.dispatchEvent(new Event('portfolio-updated'));
+      return newBooking as Booking;
+    }
+  },
+
+  saveSlot: async (slot: MentorshipSlot): Promise<void> => {
+    try {
+      await fetchApi('/slots', {
+        method: 'POST',
+        body: JSON.stringify(slot),
+      });
+    } catch {}
+    window.dispatchEvent(new Event('portfolio-updated'));
+  },
+
+  deleteSlot: async (id: string): Promise<void> => {
+    try {
+      await fetchApi(`/slots/${id}`, { method: 'DELETE' });
+    } catch {}
+    window.dispatchEvent(new Event('portfolio-updated'));
   },
 
   saveProject: async (project: Project): Promise<void> => {
-    const data = await DataService.getData();
-    const index = (data.projects || []).findIndex(p => p.id === project.id);
-    if (index > -1) data.projects[index] = project;
-    else data.projects.push(project);
-    await DataService.saveData(data);
+    try {
+      await fetchApi('/projects', {
+        method: 'POST',
+        body: JSON.stringify(project),
+      });
+    } catch {}
+    window.dispatchEvent(new Event('portfolio-updated'));
   },
 
   deleteProject: async (id: string): Promise<void> => {
-    const data = await DataService.getData();
-    data.projects = (data.projects || []).filter(p => p.id !== id);
-    await DataService.saveData(data);
+    try {
+      await fetchApi(`/projects/${id}`, { method: 'DELETE' });
+    } catch {}
+    window.dispatchEvent(new Event('portfolio-updated'));
   },
 
   saveExperience: async (exp: Experience): Promise<void> => {
-    const data = await DataService.getData();
-    const index = (data.experiences || []).findIndex(e => e.id === exp.id);
-    if (index > -1) data.experiences[index] = exp;
-    else data.experiences.push(exp);
-    await DataService.saveData(data);
+    try {
+      await fetchApi('/experiences', {
+        method: 'POST',
+        body: JSON.stringify(exp),
+      });
+    } catch {}
+    window.dispatchEvent(new Event('portfolio-updated'));
   },
 
   deleteExperience: async (id: string): Promise<void> => {
-    const data = await DataService.getData();
-    data.experiences = (data.experiences || []).filter(e => e.id !== id);
-    await DataService.saveData(data);
-  },
-
-  saveCourse: async (course: Course): Promise<void> => {
-    const data = await DataService.getData();
-    const index = (data.courses || []).findIndex(c => c.id === course.id);
-    if (index > -1) data.courses[index] = course;
-    else data.courses.push(course);
-    await DataService.saveData(data);
-  },
-
-  deleteCourse: async (id: string): Promise<void> => {
-    const data = await DataService.getData();
-    data.courses = (data.courses || []).filter(c => c.id !== id);
-    await DataService.saveData(data);
-  },
-
-  saveMentorship: async (session: MentorshipSession): Promise<void> => {
-    const data = await DataService.getData();
-    const index = (data.mentorship || []).findIndex(m => m.id === session.id);
-    if (index > -1) data.mentorship[index] = session;
-    else data.mentorship.push(session);
-    await DataService.saveData(data);
-  },
-
-  deleteMentorship: async (id: string): Promise<void> => {
-    const data = await DataService.getData();
-    data.mentorship = (data.mentorship || []).filter(m => m.id !== id);
-    await DataService.saveData(data);
-  },
-
-  addRegistration: async (reg: Omit<Registration, 'id' | 'date' | 'status'>): Promise<void> => {
-    const data = await DataService.getData();
-    const newReg: Registration = {
-      ...reg,
-      id: `reg-${Date.now()}`,
-      date: new Date().toLocaleDateString(),
-      status: 'confirmed'
-    };
-    data.registrations = data.registrations || [];
-    data.registrations.unshift(newReg);
-    await DataService.saveData(data);
+    try {
+      await fetchApi(`/experiences/${id}`, { method: 'DELETE' });
+    } catch {}
+    window.dispatchEvent(new Event('portfolio-updated'));
   },
 
   addMessage: async (msg: Omit<ContactMessage, 'id' | 'date' | 'status'>): Promise<void> => {
-    const data = await DataService.getData();
-    const newMessage: ContactMessage = {
+    const newMessage = {
       ...msg,
       id: Date.now().toString(),
       date: new Date().toLocaleDateString(),
-      status: 'new'
+      status: 'new' as const
     };
-    data.messages = data.messages || [];
-    data.messages.unshift(newMessage);
-    await DataService.saveData(data);
+    try {
+      await fetchApi('/messages', {
+        method: 'POST',
+        body: JSON.stringify(newMessage),
+      });
+    } catch {}
+    window.dispatchEvent(new Event('portfolio-updated'));
+  },
+
+  addRegistration: async (reg: Omit<Registration, 'id' | 'date' | 'status'>): Promise<void> => {
+    const newReg = {
+      ...reg,
+      id: `reg-${Date.now()}`,
+      date: new Date().toLocaleDateString(),
+      status: 'confirmed' as const
+    };
+    try {
+      await fetchApi('/registrations', {
+        method: 'POST',
+        body: JSON.stringify(newReg),
+      });
+    } catch {}
+    window.dispatchEvent(new Event('portfolio-updated'));
   },
 
   markMessageAsRead: async (id: string): Promise<void> => {
-    const data = await DataService.getData();
-    const msg = (data.messages || []).find(m => m.id === id);
-    if (msg) msg.status = 'read';
-    await DataService.saveData(data);
+    try {
+      await fetchApi(`/messages/${id}/read`, { method: 'PATCH' });
+    } catch {}
+    window.dispatchEvent(new Event('portfolio-updated'));
   },
 
   deleteMessage: async (id: string): Promise<void> => {
-    const data = await DataService.getData();
-    data.messages = (data.messages || []).filter(m => m.id !== id);
-    await DataService.saveData(data);
+    try {
+      await fetchApi(`/messages/${id}`, { method: 'DELETE' });
+    } catch {}
+    window.dispatchEvent(new Event('portfolio-updated'));
+  },
+  
+  saveCourse: async (course: Course): Promise<void> => {
+    try {
+      await fetchApi('/courses', {
+        method: 'POST',
+        body: JSON.stringify(course),
+      });
+    } catch {}
+    window.dispatchEvent(new Event('portfolio-updated'));
+  },
+
+  deleteCourse: async (id: string): Promise<void> => {
+    try {
+      await fetchApi(`/courses/${id}`, { method: 'DELETE' });
+    } catch {}
+    window.dispatchEvent(new Event('portfolio-updated'));
+  },
+
+  saveMentorshipSession: async (session: MentorshipSession): Promise<void> => {
+    try {
+      await fetchApi('/mentorship', {
+        method: 'POST',
+        body: JSON.stringify(session),
+      });
+    } catch {}
+    window.dispatchEvent(new Event('portfolio-updated'));
+  },
+
+  deleteMentorshipSession: async (id: string): Promise<void> => {
+    try {
+      await fetchApi(`/mentorship/${id}`, { method: 'DELETE' });
+    } catch {}
+    window.dispatchEvent(new Event('portfolio-updated'));
   }
 };

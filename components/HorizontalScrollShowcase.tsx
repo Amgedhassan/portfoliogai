@@ -1,8 +1,7 @@
-
 import React, { useRef } from 'react';
 import { motion, useScroll, useTransform, useSpring, MotionValue } from 'framer-motion';
 import { ArrowUpRight, Sparkles } from 'lucide-react';
-import { Project } from '../types';
+import { Project } from '../types.ts';
 
 interface HorizontalScrollShowcaseProps {
   projects: Project[];

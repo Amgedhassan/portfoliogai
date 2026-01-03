@@ -1,8 +1,7 @@
-
 import React, { useRef, useState } from 'react';
 import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'framer-motion';
 import { Shield, Cpu, Zap, Terminal } from 'lucide-react';
-import { Experience } from '../types';
+import { Experience } from '../types.ts';
 
 interface VerticalTimelineProps {
   experiences: Experience[];
@@ -77,7 +76,7 @@ const ExperienceNode: React.FC<{ exp: Experience; index: number; total: number }
             <h3 className="text-5xl md:text-8xl font-black text-white tracking-tighter uppercase leading-[0.85]">
               {exp.role.split(' ').map((word, i) => (
                 <span key={i} className="block group cursor-default">
-                  {word}{i === exp.role.split(' ').length - 1 && <span className="text-indigo-500">_</span>}
+                  {word}{i === exp.role.split(' ').length - 1 && <span className="text-indigo-400">_</span>}
                 </span>
               ))}
             </h3>

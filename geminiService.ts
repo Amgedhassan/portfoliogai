@@ -1,4 +1,3 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { PortfolioData } from './types.ts';
 
@@ -10,8 +9,8 @@ Keep your tone professional, creative, and helpful, as if you were Amgad's chief
 CONTEXT:
 Name: Amgad Hassan
 Role: ${data.about?.title || 'Senior Product Designer'}
-Summary: ${data.about?.summary || ''}
-Philosophy: ${data.about?.philosophy || ''}
+Summary: ${data.about?.summary || 'Strategic design for enterprise scale and startup velocity.'}
+Philosophy: ${data.about?.philosophy || 'ROI-driven design and scalable architectures.'}
 
 Experience Highlights:
 ${(data.experiences || []).map(e => `- ${e.role} at ${e.company} (${e.period}): ${e.description.join(' ')}`).join('\n')}
@@ -31,10 +30,11 @@ If a question is unrelated to Amgad, politely bring the conversation back to his
 
 /**
  * Handles communication with the Gemini AI.
- * Follows GenAI guidelines: assume API key is present, use .text property directly.
  */
 export const askAmgadAI = async (prompt: string, data: PortfolioData) => {
+  // Directly using process.env.API_KEY as per the global instructions
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -44,7 +44,6 @@ export const askAmgadAI = async (prompt: string, data: PortfolioData) => {
         temperature: 0.7,
       },
     });
-    // Correct usage of .text property as per GenerateContentResponse definition
     return response.text;
   } catch (error) {
     console.error("Gemini API Error:", error);

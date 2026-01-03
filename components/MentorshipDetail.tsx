@@ -1,15 +1,15 @@
-
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, CheckCircle2, Calendar, Clock, Sparkles, ChevronRight } from 'lucide-react';
-import { MentorshipSession } from '../types';
+import { MentorshipSession, View } from '../types.ts';
 
 interface MentorshipDetailProps {
   onBack: () => void;
+  onNavigate: (view: View) => void;
   sessions: MentorshipSession[];
 }
 
-const MentorshipDetail: React.FC<MentorshipDetailProps> = ({ onBack, sessions }) => {
+const MentorshipDetail: React.FC<MentorshipDetailProps> = ({ onBack, onNavigate, sessions }) => {
   const [selectedSession, setSelectedSession] = useState(sessions[0] || null);
   
   useEffect(() => {
@@ -33,7 +33,7 @@ const MentorshipDetail: React.FC<MentorshipDetailProps> = ({ onBack, sessions })
   };
 
   return (
-    <div className="min-h-screen bg-transparent text-[#f8fafc] pt-32 pb-40">
+    <div className="min-h-screen bg-transparent text-[#f8fafc] pt-32 pb-[56pt]">
       <div className="max-w-7xl mx-auto px-6">
         <motion.button 
           initial={{ opacity: 0, x: -10 }}
@@ -48,7 +48,7 @@ const MentorshipDetail: React.FC<MentorshipDetailProps> = ({ onBack, sessions })
           initial="hidden"
           animate="visible"
           variants={revealVariants}
-          className="max-w-4xl mb-32"
+          className="max-w-4xl mb-[56pt]"
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full mb-8">
             <Sparkles className="w-4 h-4 text-indigo-300" />
@@ -62,7 +62,7 @@ const MentorshipDetail: React.FC<MentorshipDetailProps> = ({ onBack, sessions })
           </p>
         </motion.div>
 
-        <div className="grid lg:grid-cols-12 gap-12 items-start">
+        <div className="grid lg:grid-cols-12 gap-12 items-start mb-[56pt]">
           <div className="lg:col-span-4 space-y-4">
             {sessions.map((session) => (
               <motion.button
@@ -119,6 +119,10 @@ const MentorshipDetail: React.FC<MentorshipDetailProps> = ({ onBack, sessions })
                           </div>
                         </div>
                       </div>
+                      <div className="bg-white/5 px-6 py-3 rounded-xl border border-white/10 flex flex-col items-center">
+                         <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Session Rate</span>
+                         <span className="text-2xl font-black text-white">${selectedSession.price}</span>
+                      </div>
                     </div>
 
                     <p className="text-xl md:text-2xl text-slate-300 mb-16 leading-relaxed font-medium">
@@ -148,6 +152,7 @@ const MentorshipDetail: React.FC<MentorshipDetailProps> = ({ onBack, sessions })
                     <motion.button 
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
+                      onClick={() => onNavigate({ type: 'mentorship_booking', session: selectedSession })}
                       className="bg-white text-black px-12 py-6 rounded-full font-black text-xs uppercase tracking-[0.2em] hover:bg-indigo-400 hover:text-white transition-all shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-4 focus-visible:ring-offset-black flex items-center gap-4"
                     >
                       Secure Booking <ChevronRight className="w-4 h-4" />

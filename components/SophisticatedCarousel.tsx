@@ -1,8 +1,7 @@
-
 import React, { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, useSpring, MotionValue, useVelocity, AnimatePresence } from 'framer-motion';
 import { ArrowUpRight, Plus, Sparkles, Play, Pause, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Project } from '../types';
+import { Project } from '../types.ts';
 
 interface SophisticatedCarouselProps {
   projects: Project[];
@@ -16,7 +15,6 @@ const CarouselItem: React.FC<{
   totalItems: number;
   onProjectClick: (p: Project) => void;
 }> = ({ project, index, scrollXProgress, totalItems, onProjectClick }) => {
-  // Safety check for totalItems
   const safeTotalItems = Math.max(2, totalItems);
   const center = index / (safeTotalItems - 1);
   const step = 1 / (safeTotalItems - 1);
@@ -40,37 +38,42 @@ const CarouselItem: React.FC<{
         perspective: "1500px"
       }}
       className="relative flex-shrink-0 w-[85vw] md:w-[65vw] h-[60vh] md:h-[70vh] flex items-center justify-center snap-center"
+      role="group"
+      aria-roledescription="slide"
+      aria-label={`${index + 1} of ${totalItems}`}
     >
       <motion.div 
         style={{ x: bgTextX }}
         className="absolute inset-0 pointer-events-none select-none z-0 flex items-center justify-center"
+        aria-hidden="true"
       >
         <h4 className="text-[25vw] font-black text-white/[0.02] uppercase leading-none whitespace-nowrap tracking-tighter">
           {project.title?.split(' ')[0] || 'WORK'}
         </h4>
       </motion.div>
 
-      <motion.div 
+      <motion.button 
         whileHover={{ scale: 1.02, rotateX: 2, rotateY: -2 }}
-        className="relative w-full h-full group cursor-pointer clickable"
+        className="relative w-full h-full group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-[4rem]"
         onClick={() => onProjectClick(project)}
+        aria-label={`View details for ${project.title}`}
       >
         <div className="relative w-full h-full rounded-[4rem] overflow-hidden border border-white/10 bg-[#0a0a0a] shadow-[0_0_80px_rgba(0,0,0,0.4)] transition-all duration-700 group-hover:border-indigo-500/30">
           <motion.img
             src={project.image}
-            alt={project.title}
+            alt=""
             className="w-full h-full object-cover opacity-30 group-hover:opacity-100 transition-all duration-1000 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent opacity-90" />
           
           <div className="absolute top-12 left-12 md:top-16 md:left-16 flex items-center gap-4">
-            <span className="text-indigo-400 text-[10px] font-black uppercase tracking-[0.4em] drop-shadow-lg">PRJ_0{index + 1}</span>
+            <span className="text-indigo-400 text-[10px] font-black uppercase tracking-[0.4em] drop-shadow-sm">PRJ_0{index + 1}</span>
             <div className="h-px w-12 bg-white/20" />
             <span className="text-slate-400 text-[10px] font-black uppercase tracking-[0.4em]">{project.role}</span>
           </div>
 
-          <div className="absolute bottom-12 left-12 right-12 md:bottom-16 md:left-16 md:right-16 flex flex-col md:flex-row md:items-end justify-between gap-8">
-            <div className="max-w-md space-y-6">
+          <div className="absolute bottom-12 left-12 right-12 md:bottom-16 md:left-16 md:right-16 flex flex-col md:flex-row md:items-end justify-between gap-8 text-left">
+            <div className="max-w-md space-y-4">
               <div className="overflow-hidden">
                 <h3 className="text-4xl md:text-7xl font-black text-white uppercase tracking-tighter leading-[0.85] group-hover:translate-y-0 transition-transform duration-700">
                   {project.title?.split(' ')[0]} <br/>
@@ -79,22 +82,21 @@ const CarouselItem: React.FC<{
                   </span>
                 </h3>
               </div>
-              <p className="text-slate-300 text-sm md:text-base font-medium line-clamp-2 leading-relaxed max-w-sm opacity-0 group-hover:opacity-100 transition-opacity duration-1000">
+              <p className="text-slate-300 text-sm md:text-base font-medium line-clamp-2 leading-relaxed max-sm opacity-0 group-hover:opacity-100 transition-opacity duration-1000">
                 {project.description}
               </p>
             </div>
 
             <div className="flex items-center gap-8">
-               <motion.div 
-                 whileHover={{ rotate: 90 }}
-                 className="w-16 h-16 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-indigo-600 group-hover:border-indigo-600 group-hover:scale-110 transition-all duration-500"
+               <div 
+                 className="w-16 h-16 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-indigo-600 group-hover:border-indigo-600 group-hover:scale-110 transition-all duration-500 bg-white/5 backdrop-blur-md"
                >
                   <Plus className="w-6 h-6 text-white" />
-               </motion.div>
+               </div>
             </div>
           </div>
         </div>
-      </motion.div>
+      </motion.button>
     </motion.div>
   );
 };
@@ -191,6 +193,8 @@ const SophisticatedCarousel: React.FC<SophisticatedCarouselProps> = ({ projects,
       className="relative h-screen bg-transparent flex flex-col justify-center overflow-hidden py-24"
       onMouseEnter={() => setIsAutoPlaying(false)}
       onMouseLeave={() => setIsAutoPlaying(true)}
+      aria-roledescription="carousel"
+      aria-label="Recent Works Showcase"
     >
       <div className="absolute top-16 left-16 md:left-24 z-30 flex items-center gap-8">
         <motion.div 
@@ -198,8 +202,8 @@ const SophisticatedCarousel: React.FC<SophisticatedCarouselProps> = ({ projects,
           animate={{ opacity: 1, x: 0 }}
           className="flex flex-col"
         >
-          <span className="text-indigo-400 text-[10px] font-black uppercase tracking-[0.8em] drop-shadow-md">Portfolio</span>
-          <span className="text-white text-[9px] font-black uppercase tracking-widest opacity-40">Series_2025</span>
+          <span className="text-indigo-400 text-[10px] font-black uppercase tracking-[0.8em]">Portfolio</span>
+          <span className="text-white/40 text-[9px] font-black uppercase tracking-widest leading-none">Series_2025</span>
         </motion.div>
       </div>
 
@@ -208,7 +212,7 @@ const SophisticatedCarousel: React.FC<SophisticatedCarouselProps> = ({ projects,
         className="flex items-center overflow-x-auto overflow-y-hidden snap-x snap-mandatory scrollbar-hide no-scrollbar"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        <div className="flex-shrink-0 w-[15vw] md:w-[25vw]" />
+        <div className="flex-shrink-0 w-[15vw] md:w-[25vw]" aria-hidden="true" />
 
         {projects.map((project, i) => (
           <CarouselItem 
@@ -221,11 +225,11 @@ const SophisticatedCarousel: React.FC<SophisticatedCarouselProps> = ({ projects,
           />
         ))}
 
-        <div className="flex-shrink-0 w-[85vw] md:w-[65vw] h-screen flex items-center justify-center snap-center">
+        <div className="flex-shrink-0 w-[85vw] md:w-[65vw] h-screen flex items-center justify-center snap-center" role="group" aria-roledescription="slide" aria-label="End of showcase">
            <motion.div className="group flex flex-col items-center gap-12">
               <button
                 onClick={() => document.getElementById('experience')?.scrollIntoView({ behavior: 'smooth' })}
-                className="group relative clickable"
+                className="group relative clickable focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-xl"
               >
                 <span className="text-[15vw] font-black text-white/5 group-hover:text-indigo-500/30 transition-all duration-1000 uppercase tracking-tighter leading-none block">
                   ARCHIVE.
@@ -239,27 +243,32 @@ const SophisticatedCarousel: React.FC<SophisticatedCarouselProps> = ({ projects,
            </motion.div>
         </div>
 
-        <div className="flex-shrink-0 w-[15vw] md:w-[25vw]" />
+        <div className="flex-shrink-0 w-[15vw] md:w-[25vw]" aria-hidden="true" />
       </div>
 
       <div className="absolute bottom-16 left-16 right-16 md:left-24 md:right-24 z-30 flex items-center gap-12">
         <div className="flex items-center gap-4 md:gap-6">
-          <button onClick={handlePrev} className="w-12 h-12 md:w-16 md:h-16 rounded-full border border-white/5 flex items-center justify-center text-white/30 hover:text-white bg-white/5 backdrop-blur-xl transition-all clickable">
+          <button 
+            onClick={handlePrev} 
+            className="w-12 h-12 md:w-16 md:h-16 rounded-full border border-white/5 flex items-center justify-center text-white/30 hover:text-white bg-white/5 backdrop-blur-xl transition-all clickable focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 shadow-sm"
+            aria-label="Previous work"
+          >
             <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
           </button>
           
           <button 
             onClick={() => setIsAutoPlaying(!isAutoPlaying)} 
-            className="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center text-white group relative bg-white/5 border border-white/10 hover:border-white/20 transition-all clickable shadow-2xl"
-            aria-label={isAutoPlaying ? "Pause Autoplay" : "Resume Autoplay"}
+            className="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center text-white group relative bg-white/5 border border-white/10 hover:border-white/20 transition-all clickable shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            aria-label={isAutoPlaying ? "Pause autoplaying showcase" : "Resume autoplaying showcase"}
+            aria-pressed={!isAutoPlaying}
           >
-            <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none p-1" viewBox="0 0 100 100">
+            <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none p-1" viewBox="0 0 100 100" aria-hidden="true">
               <circle 
                 cx="50" 
                 cy="50" 
                 r="46" 
                 fill="none" 
-                stroke="white" 
+                stroke="currentColor" 
                 strokeOpacity="0.05"
                 strokeWidth="2.5" 
               />
@@ -268,13 +277,13 @@ const SophisticatedCarousel: React.FC<SophisticatedCarouselProps> = ({ projects,
                 cy="50" 
                 r="46" 
                 fill="none" 
-                stroke="#818cf8" 
+                stroke="#6366f1" 
                 strokeWidth="3" 
                 strokeLinecap="round"
                 strokeDasharray="289.02" 
                 animate={{ strokeDashoffset: 289.02 - (289.02 * autoProgress) / 100 }}
                 transition={{ duration: 0.1, ease: "linear" }}
-                className="drop-shadow-[0_0_8px_rgba(129,140,248,0.5)]"
+                className="drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]"
               />
             </svg>
 
@@ -282,32 +291,36 @@ const SophisticatedCarousel: React.FC<SophisticatedCarouselProps> = ({ projects,
               <AnimatePresence mode="wait">
                 {isAutoPlaying ? (
                   <motion.div key="pause" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}>
-                    <Pause className="w-5 h-5 md:w-6 md:h-6 fill-white" />
+                    <Pause className="w-5 h-5 md:w-6 md:h-6 fill-current" />
                   </motion.div>
                 ) : (
                   <motion.div key="play" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}>
-                    <Play className="w-5 h-5 md:w-6 md:h-6 fill-white ml-0.5" />
+                    <Play className="w-5 h-5 md:w-6 md:h-6 fill-current ml-0.5" />
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           </button>
 
-          <button onClick={handleNext} className="w-12 h-12 md:w-16 md:h-16 rounded-full border border-white/5 flex items-center justify-center text-white/30 hover:text-white bg-white/5 backdrop-blur-xl transition-all clickable">
+          <button 
+            onClick={handleNext} 
+            className="w-12 h-12 md:w-16 md:h-16 rounded-full border border-white/5 flex items-center justify-center text-white/30 hover:text-white bg-white/5 backdrop-blur-xl transition-all clickable focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 shadow-sm"
+            aria-label="Next work"
+          >
             <ChevronRight className="w-6 h-6 md:w-8 md:h-8" />
           </button>
         </div>
 
-        <div className="flex-1 h-px bg-white/10 relative">
-          <motion.div style={{ scaleX: scrollXProgress }} className="absolute inset-0 bg-indigo-500 origin-left shadow-[0_0_32px_rgba(99,102,241,0.8)]" />
+        <div className="flex-1 h-px bg-white/10 relative" aria-hidden="true">
+          <motion.div style={{ scaleX: scrollXProgress }} className="absolute inset-0 bg-indigo-500 origin-left shadow-[0_0_20px_rgba(99,102,241,0.5)]" />
           <div className="absolute inset-0 flex justify-between px-1 pointer-events-none">
             {[...Array(totalItems)].map((_, i) => (
-              <div key={i} className={`w-2 h-2 rounded-full mt-[-3px] transition-all duration-700 ${activeSlide === i ? 'bg-indigo-400 scale-[2] shadow-[0_0_15px_rgba(129,140,248,0.8)]' : 'bg-white/10'}`} />
+              <div key={i} className={`w-2 h-2 rounded-full mt-[-3px] transition-all duration-700 ${activeSlide === i ? 'bg-indigo-400 scale-[2] shadow-[0_0_15px_rgba(99,102,241,0.6)]' : 'bg-white/10'}`} />
             ))}
           </div>
         </div>
 
-        <div className="flex items-center gap-10">
+        <div className="flex items-center gap-10" aria-hidden="true">
           <div className="flex flex-col items-end">
              <span className="text-white text-xl font-black tracking-tighter">0{activeSlide + 1}</span>
              <span className="text-white/40 text-[8px] font-black uppercase tracking-[0.5em] leading-none">Seq_ID</span>
@@ -317,12 +330,6 @@ const SophisticatedCarousel: React.FC<SophisticatedCarouselProps> = ({ projects,
           </div>
         </div>
       </div>
-      
-      <style>{`
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-      `}</style>
     </section>
   );
 };

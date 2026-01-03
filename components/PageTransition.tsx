@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -17,7 +16,7 @@ const PageTransition: React.FC<PageTransitionProps> = ({ isChanging }) => {
     "INIT_LAYOUT",
     "RECONFIG_NODES",
     "LOAD_ASSETS",
-    "RENDER_PIXELS"
+    "LOAD_DESIGN_OPS"
   ];
 
   return (
@@ -85,7 +84,6 @@ const PageTransition: React.FC<PageTransitionProps> = ({ isChanging }) => {
               
               <div className="flex items-center gap-2 overflow-hidden h-4">
                 <motion.div
-                  /* Fixed: 'steps(5)' easing is not supported in framer-motion Easing type. Replaced with 'linear'. */
                   animate={{ y: [0, -16, -32, -48, -64, 0] }}
                   transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
                   className="flex flex-col items-center"

@@ -1,5 +1,5 @@
 
-import { Project, Experience, Certification, Skill, MentorshipSession, Course } from './types';
+import { Project, Experience, Certification, Skill, MentorshipSession, Course } from './types.ts';
 
 export const PERSONAL_INFO = {
   name: 'Amgad Hassan',
@@ -7,8 +7,7 @@ export const PERSONAL_INFO = {
   summary: 'Architecting high-performance digital products for global enterprises and high-growth startups. Specializing in turning complex requirements into intuitive, revenue-driving B2B experiences and scalable design systems.',
   email: 'amgedhassan@outlook.com',
   linkedin: 'https://www.linkedin.com/in/amgad-hassan-243248145',
-  behance: 'https://www.behance.net/amgedhassan',
-  phone: '+20 111 976 0542'
+  behance: 'https://www.behance.net/amgedhassan'
 };
 
 export const PROJECTS: Project[] = [
@@ -130,8 +129,17 @@ export const MENTORSHIP_SESSIONS: MentorshipSession[] = [
     id: 'portfolio-audit',
     title: 'High-Impact Portfolio Audit',
     duration: '60 Mins',
+    price: 150,
     description: 'For mid-level designers who want to transition into high-paying B2B roles. We fix your case studies to focus on ROI and logic.',
     topics: ['Case Study Narrative', 'Enterprise UX Presentation', 'Negotiating Rates']
+  },
+  {
+    id: 'strategic-logic',
+    title: 'Design Logic & ROI Strategy',
+    duration: '90 Mins',
+    price: 250,
+    description: 'Master the art of presenting design as a business value multiplier. Perfect for leads and seniors presenting to C-suite.',
+    topics: ['Stakeholder Alignment', 'ROI Frameworks', 'B2B Complexity Management']
   }
 ];
 

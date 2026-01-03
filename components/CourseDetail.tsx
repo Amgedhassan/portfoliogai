@@ -1,8 +1,7 @@
-
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Award, Sparkles, ShieldCheck, Bookmark } from 'lucide-react';
-import { Certification } from '../types';
+import { Certification } from '../types.ts';
 
 interface CourseDetailProps {
   course: Certification;

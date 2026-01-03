@@ -2,8 +2,8 @@
 import React, { useEffect } from 'react';
 import { motion, Variants } from 'framer-motion';
 import { ArrowLeft, LayoutGrid, Briefcase } from 'lucide-react';
-import { Project } from '../types';
-import { View } from '../App';
+// Corrected import: View is exported from types.ts
+import { Project, View } from '../types.ts';
 
 interface ProjectsGalleryProps {
   projects: Project[];

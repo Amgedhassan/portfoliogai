@@ -1,7 +1,6 @@
-
 import React, { useRef } from 'react';
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
-import { Experience } from '../types';
+import { Experience } from '../types.ts';
 
 interface HorizontalTimelineProps {
   experiences: Experience[];

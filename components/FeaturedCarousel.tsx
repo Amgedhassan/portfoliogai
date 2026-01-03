@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ArrowRight, Sparkles } from 'lucide-react';
-import { Project } from '../types';
+import { Project } from '../types.ts';
 
 interface FeaturedCarouselProps {
   projects: Project[];

@@ -1,9 +1,8 @@
-
 import React, { useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { ArrowLeft, ExternalLink, ChevronRight, ArrowRight, Sparkles } from 'lucide-react';
-import { Project } from '../types';
-import { PERSONAL_INFO } from '../constants';
+import { Project } from '../types.ts';
+import { PERSONAL_INFO } from '../constants.tsx';
 
 interface ProjectDetailProps {
   project: Project;
@@ -19,6 +18,8 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack, onNext }
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  const isStudyAvailable = project.showCaseStudy !== false;
 
   return (
     <motion.div 
@@ -88,10 +89,10 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack, onNext }
         </div>
       </header>
 
-      {/* Content Section */}
-      <div className="max-w-7xl mx-auto px-8 mt-40 pb-40">
+      {/* Content Section with Standardized Spacing */}
+      <div className="max-w-7xl mx-auto px-8 mt-[56pt] pb-[56pt]">
         <div className="grid lg:grid-cols-12 gap-24">
-          <div className="lg:col-span-7 space-y-40">
+          <div className="lg:col-span-7 space-y-[56pt]">
             <motion.section 
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -149,11 +150,18 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack, onNext }
                 {project.challenge}
               </p>
               <div className="h-px w-full bg-white/5" />
+              
               <button 
-                onClick={() => window.open(project.behanceUrl || PERSONAL_INFO.behance, '_blank')}
-                className="w-full bg-white text-black font-black py-8 rounded-full hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center gap-6 text-xs uppercase tracking-[0.2em] shadow-xl clickable focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                disabled={!isStudyAvailable}
+                onClick={() => isStudyAvailable && window.open(project.behanceUrl || PERSONAL_INFO.behance, '_blank')}
+                className={`w-full font-black py-8 rounded-full flex items-center justify-center gap-6 text-xs uppercase tracking-[0.2em] shadow-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                  isStudyAvailable 
+                    ? 'bg-white text-black hover:bg-indigo-500 hover:text-white clickable' 
+                    : 'bg-white/10 text-slate-500 opacity-50 cursor-not-allowed'
+                }`}
               >
-                Launch Visual Case Study <ExternalLink className="w-5 h-5" />
+                {isStudyAvailable ? 'Launch Visual Case Study' : 'Case Study — Coming Soon'}
+                {isStudyAvailable && <ExternalLink className="w-5 h-5" />}
               </button>
             </motion.div>
           </aside>
@@ -163,7 +171,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack, onNext }
       {/* Navigation Footer */}
       {onNext && (
         <section 
-          className="border-t border-white/5 pt-40 pb-40 px-8 group cursor-pointer overflow-hidden relative clickable bg-transparent" 
+          className="border-t border-white/5 pt-[56pt] pb-[56pt] px-8 group cursor-pointer overflow-hidden relative clickable bg-transparent" 
           onClick={onNext}
           onKeyDown={(e) => e.key === 'Enter' && onNext()}
           tabIndex={0}

@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, CheckCircle, Loader2, Sparkles } from 'lucide-react';
-import { DataService } from '../dataService';
+import { DataService } from '../dataService.ts';
 
 const ContactForm: React.FC = () => {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
@@ -23,22 +22,24 @@ const ContactForm: React.FC = () => {
     }
   };
 
+  const inputClasses = "w-full bg-white/5 border border-white/10 rounded-2xl px-8 py-5 outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] focus:ring-4 focus:ring-indigo-500/10 transition-all text-lg font-bold text-white placeholder:text-white/10";
+
   return (
-    <div className="bg-white/5 backdrop-blur-2xl p-12 md:p-20 rounded-[4rem] border border-white/10 shadow-2xl relative overflow-hidden">
+    <div className="bg-slate-900/40 backdrop-blur-3xl p-12 md:p-16 rounded-[4rem] border border-white/10 shadow-[0_32px_64px_rgba(0,0,0,0.4)] relative overflow-hidden">
       <AnimatePresence mode="wait">
         {status === 'success' ? (
           <motion.div
             key="success"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="py-32 text-center"
-            role="alert"
+            className="py-24 text-center"
+            role="status"
           >
-            <div className="w-24 h-24 rounded-full bg-indigo-500/10 flex items-center justify-center mx-auto mb-12 border border-indigo-500/20">
+            <div className="w-24 h-24 rounded-full bg-indigo-500/10 flex items-center justify-center mx-auto mb-10 border border-indigo-500/20 shadow-[0_0_40px_rgba(99,102,241,0.1)]">
                <CheckCircle className="w-12 h-12 text-indigo-400" />
             </div>
-            <h3 className="text-4xl font-black mb-6 text-white uppercase tracking-tighter">Transmission Sent.</h3>
-            <p className="text-slate-500 uppercase tracking-[0.5em] text-[10px] font-black">Average Response Window: 24h</p>
+            <h3 className="text-4xl font-black mb-4 text-white uppercase tracking-tighter">Transmission Sent.</h3>
+            <p className="text-indigo-400/60 uppercase tracking-[0.5em] text-[10px] font-black">Dispatcher active: 24h Window</p>
           </motion.div>
         ) : (
           <motion.form
@@ -46,43 +47,40 @@ const ContactForm: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             onSubmit={handleSubmit}
-            className="space-y-16"
+            className="space-y-10"
           >
-            <div className="space-y-12">
-              <div className="relative group">
-                <label htmlFor="full-name" className="text-[10px] font-black text-slate-700 uppercase tracking-widest block mb-4">Design Inquiry From</label>
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-indigo-400/70 uppercase tracking-[0.4em] block ml-2">Identity Protocol</label>
                 <input
                   required
-                  id="full-name"
                   type="text"
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full bg-transparent border-b border-white/10 py-6 focus:border-indigo-500 outline-none transition-all text-2xl font-bold text-white placeholder:text-slate-800 focus:ring-0"
-                  placeholder="YOUR NAME / COMPANY"
+                  className={inputClasses}
+                  placeholder="NAME / ORGANIZATION"
                 />
               </div>
-              <div className="relative group">
-                <label htmlFor="email-address" className="text-[10px] font-black text-slate-700 uppercase tracking-widest block mb-4">Contact Gateway</label>
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-indigo-400/70 uppercase tracking-[0.4em] block ml-2">Communication Link</label>
                 <input
                   required
-                  id="email-address"
                   type="email"
                   value={formData.email}
                   onChange={e => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full bg-transparent border-b border-white/10 py-6 focus:border-indigo-500 outline-none transition-all text-2xl font-bold text-white placeholder:text-slate-800 focus:ring-0"
-                  placeholder="EMAIL ADDRESS"
+                  className={inputClasses}
+                  placeholder="EMAIL@DOMAIN.COM"
                 />
               </div>
-              <div className="relative group">
-                <label htmlFor="project-brief" className="text-[10px] font-black text-slate-700 uppercase tracking-widest block mb-4">Brief Specification</label>
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-indigo-400/70 uppercase tracking-[0.4em] block ml-2">Objective Specification</label>
                 <textarea
                   required
-                  id="project-brief"
-                  rows={3}
+                  rows={4}
                   value={formData.message}
                   onChange={e => setFormData({ ...formData, message: e.target.value })}
-                  className="w-full bg-transparent border-b border-white/10 py-6 focus:border-indigo-500 outline-none transition-all text-2xl font-bold resize-none text-white placeholder:text-slate-800 focus:ring-0"
-                  placeholder="DESCRIBE THE PROBLEM SPACE..."
+                  className={`${inputClasses} resize-none`}
+                  placeholder="HOW CAN WE ACCELERATE YOUR PRODUCT?"
                 />
               </div>
             </div>
@@ -90,20 +88,24 @@ const ContactForm: React.FC = () => {
             <button
               type="submit"
               disabled={status === 'submitting'}
-              className="group w-full flex items-center justify-between gap-8 text-xs font-black uppercase tracking-[0.6em] text-white hover:text-indigo-400 disabled:opacity-50 transition-all p-2"
+              className="group w-full bg-white text-black font-black py-7 rounded-3xl flex items-center justify-center gap-6 hover:bg-indigo-600 hover:text-white transition-all duration-500 shadow-2xl disabled:opacity-50"
             >
-              <span>{status === 'submitting' ? 'DISPATCHING SEQUENCE...' : 'INITIALIZE CONTACT'}</span>
-              <div className="w-16 h-16 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-indigo-500 group-hover:border-indigo-500 group-hover:scale-110 transition-all duration-500">
-                {status === 'submitting' ? <Loader2 className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />}
-              </div>
+              <span className="text-[11px] uppercase tracking-[0.3em]">
+                {status === 'submitting' ? 'COMMITTING DATA...' : 'INITIALIZE DISPATCH'}
+              </span>
+              {status === 'submitting' ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+              )}
             </button>
           </motion.form>
         )}
       </AnimatePresence>
       
-      {/* Visual Decor */}
-      <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
-         <Sparkles className="w-24 h-24 text-white" />
+      {/* Decorative Matrix Elements */}
+      <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none">
+         <Sparkles className="w-32 h-32 text-white" />
       </div>
     </div>
   );

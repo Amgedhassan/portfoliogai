@@ -1,8 +1,7 @@
-
 import React, { useRef } from 'react';
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
-import { Project } from '../types';
+import { Project } from '../types.ts';
 
 interface ProjectListShowcaseProps {
   projects: Project[];

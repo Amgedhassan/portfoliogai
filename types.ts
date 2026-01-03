@@ -1,4 +1,3 @@
-
 export interface CaseStudyOutcome {
   label: string;
   value: string;
@@ -20,6 +19,7 @@ export interface Project {
   timeline: string;
   tools: string[];
   isFeatured?: boolean;
+  showCaseStudy?: boolean;
   audience?: string;
   researchInsights?: string[];
   outcomes?: CaseStudyOutcome[];
@@ -55,11 +55,12 @@ export interface Course {
   description: string;
   fullDescription: string;
   type: 'external' | 'session';
-  platform?: string; // e.g. 'Udemy', 'YouTube', 'Zoom'
-  url?: string; // for external
-  price: number; // 0 for free
+  platform?: string;
+  url?: string;
+  price: number;
+  priceEGP?: number; // Optional Egyptian Pound price
   currency: string;
-  date?: string; // for sessions
+  date?: string;
   duration: string;
   image: string;
   skills: string[];
@@ -73,16 +74,46 @@ export interface Registration {
   courseTitle: string;
   userName: string;
   userEmail: string;
+  userPhone: string;
   date: string;
   status: 'pending' | 'confirmed';
+  selectedCurrency: 'USD' | 'EGP';
+  paidAmount: number;
+  paymentReceipt?: string; // Base64 or URL of the screenshot
 }
 
 export interface MentorshipSession {
   id: string;
   title: string;
-  duration: string;
+  duration: string; // e.g. "60 Mins"
   description: string;
   topics: string[];
+  price: number;
+  priceEGP?: number;
+}
+
+export interface MentorshipSlot {
+  id: string;
+  dateTime: string; // ISO string (UTC)
+  endTime: string;  // ISO string (UTC)
+  status: 'available' | 'locked' | 'booked';
+  sessionId: string;
+  price: number;
+}
+
+export interface Booking {
+  id: string;
+  slotId: string;
+  sessionId: string;
+  userName: string;
+  userEmail: string;
+  userPhone: string;
+  amount: number;
+  currency: 'USD' | 'EGP';
+  paymentRef: string;
+  paymentStatus: 'paid' | 'pending';
+  timestamp: string;
+  paymentReceipt?: string; // Base64 or URL of the screenshot
 }
 
 export interface Skill {
@@ -104,6 +135,7 @@ export interface PortfolioData {
     title: string;
     summary: string;
     philosophy: string;
+    image?: string;
   };
   projects: Project[];
   experiences: Experience[];
@@ -111,6 +143,8 @@ export interface PortfolioData {
   courses: Course[];
   registrations: Registration[];
   mentorship: MentorshipSession[];
+  slots: MentorshipSlot[];
+  bookings: Booking[];
   messages: ContactMessage[];
 }
 
@@ -119,3 +153,15 @@ export type AsyncState<T> = {
   loading: boolean;
   error: string | null;
 };
+
+export type View = 
+  | { type: 'home'; anchor?: string }
+  | { type: 'project'; data: Project }
+  | { type: 'course_detail'; data: Course }
+  | { type: 'about' }
+  | { type: 'mentorship' }
+  | { type: 'mentorship_booking'; session: MentorshipSession }
+  | { type: 'login' }
+  | { type: 'dashboard' }
+  | { type: 'gallery' }
+  | { type: 'courses' };
